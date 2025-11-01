@@ -1,0 +1,9 @@
+pydantic
+fastapi
+uvicorn
+sqlalchemy
+scikit-learn
+pandas
+numpy
+requests
+mlflow
