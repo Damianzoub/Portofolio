@@ -3,7 +3,7 @@ import Link from "next/link";
 
 function Pill({children}: {children:React.ReactNode}){
     return (
-        <span className="inline-flex items-center ronuded-full bg-slate-100 text-slate-700 text-xs px-2 py-0 5">
+        <span className="inline-flex items-center ronuded-full bg-slate-100 text-slate-700 text-xs px-2 py-0.5">
             {children}
         </span>
     )
