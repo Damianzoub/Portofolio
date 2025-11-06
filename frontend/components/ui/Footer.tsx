@@ -3,7 +3,8 @@ import {
     Github,Linkedin,Instagram,Mail,Send
 } from "lucide-react";
 
-export default function Footer(){
+export default function Footer({year}: {year:number}){
+    
     return (
         <footer className="w-full border-t text-slate-500 mt-10">
             <div className="flex flex-col-reverse justify-between text-slate-500 px-6 py-10 space-y-8 md:flex-row md:space-y-0 w-full">
@@ -47,7 +48,7 @@ export default function Footer(){
                 </div>
             </div>
             <div className="border-t text-center py-6 text-sm text-slate-500">
-                &copy; {new Date().getFullYear()} Damian Zoub • All rights reserved.
+                &copy; {year} Damian Zoub • All rights reserved.
             </div>
         </footer>
     )

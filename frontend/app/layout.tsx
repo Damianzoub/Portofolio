@@ -20,7 +20,7 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-
+const year = new Date().getUTCFullYear();
 
 export default function RootLayout({
   children,
@@ -34,7 +34,8 @@ export default function RootLayout({
           <main className="flex-1 px-6 md:px-10 py-10 max-w-6xl mx-auto w-full">
             {children}
           </main>
-          <Footer/>
+          
+          <Footer year={year}/>
       </body>
     </html>
   );
