@@ -2,38 +2,55 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { getAllPostSlugs ,getPostBySlug } from "@/app/lib/posts";
 import { formatDate } from "@/app/lib/format";
-type Params = {slug:string};
+type Params = { slug: string };
 
-export async function generateStaticParam(){
-    return getAllPostSlugs().map((slug)=>({slug}));
-}
-export function generateMetadata({params}: {params: Params}){
-    const post = getPostBySlug(params.slug);
-    if (!post) return {};
-    return {
-        title:`${post.frontmatter.title} - Blog`,
-        description: post.frontmatter.excerpt ?? ""
-    };
+// Pre-render all posts (can stay async)
+export async function generateStaticParams() {
+  return getAllPostSlugs().map((slug) => ({ slug }));
 }
 
-export default function BlogPostPage({params}: {params: Params}){
-    const post = getPostBySlug(params.slug);
-    if (!post) notFound();
-    const {frontmatter,html} = post;
+// ⬇️ params is a Promise now — await it
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<Params>;
+}) {
+  const { slug } = await params;
+  const post = getPostBySlug(slug);
+  if (!post) return {};
+  return {
+    title: `${post.frontmatter.title} — Blog`,
+    description: post.frontmatter.excerpt ?? "",
+  };
+}
 
-    return (
-        <article className="max-w-3xl mx-auto">
-            <Link href="/blog" className="text-sm text-indigo-600 hover:underline">
-            Back to Blog</Link>
+// ⬇️ Same here: await params
+export default async function BlogPostPage({
+  params,
+}: {
+  params: Promise<Params>;
+}) {
+  const { slug } = await params;
+  const post = getPostBySlug(slug);
+  if (!post) notFound();
 
-            <h1 className="mt-3 text-3xl font-semibold">{frontmatter.title}</h1>
-            <div className="mt-1 text-xs text-slate-500">
-                {formatDate(frontmatter.date)}
-            </div>
+  const { frontmatter, html } = post;
 
-            <div className="mt-6 leading-relaxed text-slate-800 space-y-4" dangerouslySetInnerHTML={{__html: html}}>
+  return (
+    <article className="max-w-3xl mx-auto">
+      <Link href="/blog" className="text-sm text-indigo-600 hover:underline">
+        ← Back to Blog
+      </Link>
 
-            </div>
-        </article>
-    )
+      <h1 className="mt-3 text-3xl font-semibold">{frontmatter.title}</h1>
+      <div className="mt-1 text-xs text-slate-500">
+        {formatDate(frontmatter.date)}
+      </div>
+
+      <div
+        className="mt-6 leading-relaxed text-slate-800 space-y-4"
+        dangerouslySetInnerHTML={{ __html: html }}
+      />
+    </article>
+  );
 }
