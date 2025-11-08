@@ -1,10 +1,9 @@
-"use client";
 import {
     Github,Linkedin,Instagram,Mail,Send
 } from "lucide-react";
-
-export default function Footer({year}: {year:number}){
-    
+import NewsletterForm from "./NewsletterForm";
+export default function Footer(){
+    const year = new Date().getUTCFullYear();
     return (
         <footer className="w-full border-t text-slate-500 mt-10">
             <div className="flex flex-col-reverse justify-between text-slate-500 px-6 py-10 space-y-8 md:flex-row md:space-y-0 w-full">
@@ -17,12 +16,7 @@ export default function Footer({year}: {year:number}){
                         <h4 className="text-sm font-medium text-slate-800 uppercase tracking-wide">
                             Newsletter
                         </h4>
-                        <form onSubmit={(e)=> e.preventDefault()} className="flex gap-2">
-                            <input type="email" placeholder="youremail@example.com" className="flex-1 rounded-xl border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
-                            <button type="submit" className="rounded-xl bg-indigo-600 px-3 py-2 text-white hover:bg-indigo-700 transition">
-                                <Send size={16}/>
-                            </button>
-                        </form>
+                        <NewsletterForm/>
                    </div>
                 </div>
                 <div className="flex justify-between md:px-4  space-x-6 md:w-1/2">
