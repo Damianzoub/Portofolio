@@ -1,9 +1,6 @@
+import ProjectBrowser from "./projectBrowser";
 import type { Repo } from "../types/repo";
-import ProjectFilter from "@/components/projects/ProjectFilters";
-import ProjectGrid from "@/components/projects/ProjectGrid";
-import { useMemo,useState } from "react";
-
-export const dynamic ='force-static';
+import { getDefaultAutoSelectFamilyAttemptTimeout } from "net";
 
 const sample: Repo[] = [
     { id: 1, name: "Iris Classifier", description: "End-to-end ML pipeline with FastAPI inference.", html_url: "https://github.com/Damianzoub/ml-project-iris", language: "Python", stargazers_count: 0, category: "ML" },
@@ -13,4 +10,11 @@ const sample: Repo[] = [
     { id: 5, name: "Math Utils", description: "Numeric helpers", html_url: "https://github.com/Damianzoub/math-utils", language: "JavaScript", stargazers_count: 0, category: "Math" },
 ];
 
-//CONTINUE THE PAGE OF PROJECTS BELOW
+export const metadata ={
+    title: "Projects Damianos Zoumpos",
+    description: "My Personal Projects from my Github"
+}
+//fetch from fastapi
+export default async function ProjectsPage(){
+    return <ProjectBrowser initialItems={sample}/>
+}
