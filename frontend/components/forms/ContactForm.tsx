@@ -49,8 +49,19 @@ export default function ContactForm(){
                 body: JSON.stringify({name,email,message}),
             })
             if (!res.ok){
+                const text = await res.text().catch(()=>"");
                 throw new Error(`Requet failed: ${res.status}`)
             }
+            const data = await res.json()
+            if (!data.ok){
+                setState("error")
+                setErrorMsg(data.message|| "Something went wrong");
+                return;
+            }
+
+            setState("success");
+            form.reset();
+            
         }catch(error:any){
             setState('error');
             setErrorMsg(error?.message||'Something went wrong');

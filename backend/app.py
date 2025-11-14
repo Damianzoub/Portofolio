@@ -2,7 +2,7 @@ from typing import List
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from errors.handlers import http_403_handler,http_500_handler,http_404_handler
-from models import Repo , ContactIn
+from models import Repo , ContactIn, Newsletter
 from utils.email_check import check_email
 
 
@@ -95,12 +95,18 @@ async def list_projects()-> list[Repo]:
 @app.post('/contact')
 async def submit_contact(contact:ContactIn):
     # later: store in db or send email
+    if not check_email(contact.email):
+        return {"ok":False,"message":"Invalid email address."}
+    if len(contact.message.strip())==0:
+        return {"ok":False,"message":"Message cannot be empty."}
+    if len(contact.name.strip())==0:
+        return {"ok":False,"message":"Name cannot be empty."}
     return {"ok":True,"message":"Thanks for reaching out!"}
 
 @app.post('/newsletter')
-async def subscribe_newsletter(email:str):
+async def subscribe_newsletter(body:Newsletter):
     # later: store in db or send email
-    if check_email(email):
+    if check_email(body.email):
         return {"ok":True,"message":"Subscribed to newsletter!"}
     else:
         return {"ok":False,"message":"Invalid email address."}
