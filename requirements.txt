@@ -1,7 +1,7 @@
 pydantic
 fastapi
 uvicorn
-sqlalchemy
+sqlmodel
 scikit-learn
 pandas
 numpy
