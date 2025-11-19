@@ -55,7 +55,7 @@ async def health():
 
 @app.get("/projects", response_model=List[Repo])
 async def list_projects(session: Session = Depends(get_session)):
-    gh_repos = fetch_repos_for_user(GITHUB_USER)  # whatever args
+    gh_repos = fetch_repos_for_user(GITHUB_USER)  
 
     # 1) GitHub -> Projects (DB models)
     project_models: list[Projects] = []
@@ -65,10 +65,10 @@ async def list_projects(session: Session = Depends(get_session)):
                 github_id=r.id,                             # GitHub ID
                 name=r.name,
                 description=getattr(r, "description", None),
-                html_url=r.html_url,                        # ✅ required later for Repo
+                html_url=r.html_url,                        
                 language=getattr(r, "language", None),
                 stargazers_count=getattr(r, "stargazers_count", 0),
-                # category you can fill later from config / mapping
+                
             )
         )
 
@@ -79,7 +79,7 @@ async def list_projects(session: Session = Depends(get_session)):
     for p in stored_projects:
         repos_response.append(
             Repo(
-                id=p.github_id,                 # frontend sees GitHub ID as id
+                id=p.github_id,                
                 name=p.name,
                 description=p.description,
                 html_url=p.html_url,
@@ -93,7 +93,7 @@ async def list_projects(session: Session = Depends(get_session)):
 
 @app.post('/contact',response_model=ContactOut)
 async def submit_contact(contact:ContactIn, session: Session = Depends(get_session)):
-    # later: store in db or send email
+    
     if not check_email(contact.email):
         return {"ok":False,"message":"Invalid email address."}
     if len(contact.message.strip())==0:
@@ -144,7 +144,7 @@ async def submit_contact(contact:ContactIn, session: Session = Depends(get_sessi
 
 @app.post('/newsletter')
 async def subscribe_newsletter(body:Newsletter,session: Session = Depends(get_session)):
-    # later: store in db or send email
+    
     if check_email(body.email):
         sub = NewsletterSubscribers(
             email = body.email
