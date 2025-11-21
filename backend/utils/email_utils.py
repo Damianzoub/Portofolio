@@ -39,6 +39,32 @@ def send_contact_email(
         server.login(smtp_user,smtp_pass)
         server.send_message(msg)
 
+def send_subcription_confirmation_email(
+        smtp_host:str,
+        smtp_port:int,
+        smtp_user:str,
+        smtp_pass:str,
+        sender:str,
+        user_email:str,
+        user_name:str 
+)-> None:
+    msg = EmailMessage()
+    msg['Subject'] = "Subscription Confirmation"
+    msg['From'] = sender
+    msg['To']= user_email
+    body=f"""
+    Hi {user_name},
+    Thank you for subscribing to our newsletter! We're excited to have you on board.    
+    Best regards,
+    Damianos Zoumpos
+    -----
+    """
+
+    msg.set_content(body)
+    with smtplib.SMTP(smtp_host,smtp_port) as serveer:
+        serveer.starttls()
+        serveer.login(smtp_user,smtp_pass)
+        serveer.send_message(msg)
 
 def send_user_confirmation_email(
         smtp_host:str,
