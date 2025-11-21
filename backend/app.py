@@ -4,14 +4,14 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from errors.handlers import http_403_handler,http_500_handler,http_404_handler
 from models import Repo , Newsletter , ContactIn , ContactOut
-from dotenv import load_dotenv 
+from dotenv import load_dotenv
 import os
 from services.project_services import sync_projects
 from fastapi import Depends
 from sqlmodel import Session, select
 from db import init_db,get_session
 from db_models import Projects,Contacts,NewsletterSubscribers
-from utils.email_utils import send_contact_email, check_email,send_user_confirmation_email
+from utils.email_utils import send_contact_email, check_email,send_user_confirmation_email,send_subcription_confirmation_email
 from client.github_client import fetch_repos_for_user
 from pathlib import Path
 load_dotenv()
@@ -142,16 +142,34 @@ async def submit_contact(contact:ContactIn, session: Session = Depends(get_sessi
         received_at=msg.received_at
     )
 
+
 @app.post('/newsletter')
 async def subscribe_newsletter(body:Newsletter,session: Session = Depends(get_session)):
     
     if check_email(body.email):
+        existing = session.exec(
+            select(NewsletterSubscribers).where(NewsletterSubscribers.email==body.email)
+        )
+        if existing:
+            raise Exception("Email already subscribed.")
         sub = NewsletterSubscribers(
             email = body.email
         )
         session.add(sub)
         session.commit()
         session.refresh(sub)
+        try:
+            send_subcription_confirmation_email(
+                smtp_host=SMTP_HOST,
+                smtp_port=SMTP_PORT,
+                smtp_user = SMTP_USER,
+                smtp_pass = SMTP_PASSWORD,
+                sender = SMTP_USER,
+                user_email = body.email,
+                user_name = body.email.split("@")[0]
+            )
+        except Exception as e:
+            return {"ok":False,"message":"Failed to send confirmation email."}
         return {"ok":True,"message":"Subscribed to newsletter!"}
     else:
         return {"ok":False,"message":"Invalid email address."}
