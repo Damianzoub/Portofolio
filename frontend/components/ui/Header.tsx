@@ -7,7 +7,8 @@ const nav= [
     {href:'/projects',label:"Projects"},
     {href:'/blog',label:"Blog"},
     {href:'/about',label:"About"},
-    {href:'/contact',label:"Contact"}
+    {href:'/contact',label:"Contact"},
+    {href:'/assistant',label:"AI Assistant"}
 ]
 
 export default function Header(){

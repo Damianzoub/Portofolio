@@ -3,7 +3,7 @@ from typing import List
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from errors.handlers import http_403_handler,http_500_handler,http_404_handler
-from models import Repo , Newsletter , ContactIn , ContactOut
+from models import Repo , Newsletter , ContactIn , ContactOut, ChatResponse,ChatRequest
 from dotenv import load_dotenv
 import os
 from services.project_services import sync_projects
@@ -14,6 +14,7 @@ from db_models import Projects,Contacts,NewsletterSubscribers
 from utils.email_utils import send_contact_email, check_email,send_user_confirmation_email,send_subcription_confirmation_email
 from client.github_client import fetch_repos_for_user
 from pathlib import Path
+
 load_dotenv()
 GITHUB_USER = os.getenv("GITHUB_USER")
 GITHUB_TOKEN = os.getenv("GITHUB_TOKEN")
@@ -49,6 +50,35 @@ app.add_middleware(
 def on_startup():
     init_db()
 
+
+@app.post('/assistant',response_model=ChatResponse)
+async def chat_endpoint(payload:ChatRequest)->ChatResponse:
+    last_user = None
+    for msg in reversed(payload.messages):
+        if msg.role == "user":
+            last_user = msg.content.strip()
+            break
+    if not last_user:
+        return ChatResponse(reply="Tell me something about ML, your projects, or your CV.")
+    text = last_user.lower()
+    if "cv" in text or "resume" in text:
+        reply=(
+            "If you upload your CV in the CV Analyzer"
+            "I can help you analyze it and provide feedback!"
+        )
+    elif "project" in text or "projects" in text:
+        reply=(
+            "My portofolio focuses on ML projects"
+            "Plus backend work with Fastpi , Flask and  many more frameworks."
+        )
+    elif "fastapi" in text:
+        reply = "FastAPI is what powers this site's backend and APIs, like /projects and /contact."
+    else:
+        reply=(
+            "I'm here to help you with information about my projects, "
+            "my CV, and how I can assist you with Machine Learning tasks!"
+        )
+    return ChatResponse(reply=reply)
 @app.get('/health')
 async def health():
     return {"status":"ok"}
