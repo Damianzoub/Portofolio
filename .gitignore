@@ -7,7 +7,7 @@ __pycache__/
 *.so
 
 .env 
-
+/backend/portfolio.db
 # Distribution / packaging
 .Python
 build/

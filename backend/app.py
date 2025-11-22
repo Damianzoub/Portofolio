@@ -52,33 +52,49 @@ def on_startup():
 
 
 @app.post('/assistant',response_model=ChatResponse)
-async def chat_endpoint(payload:ChatRequest)->ChatResponse:
-    last_user = None
+async def chat_endpoint(payload:ChatRequest , session:Session = Depends(get_session))->ChatResponse:
+    last_user = None 
     for msg in reversed(payload.messages):
         if msg.role == "user":
             last_user = msg.content.strip()
-            break
+            break 
+    
     if not last_user:
-        return ChatResponse(reply="Tell me something about ML, your projects, or your CV.")
+        return ChatResponse(
+            reply="Tell me what you want to know about my projects, stack or CV."
+        )
     text = last_user.lower()
+
+    if "project" in text or "portfolio" in text:
+        projects = session.exec(select(Projects)).all()
+        if not projects:
+            return ChatResponse(
+                reply="I don't have any projects in database right now."
+            ) 
+        lines = []
+        for p in projects[:5]:
+            line = f"- {p.name}"
+            if p.description:
+                line += f": {p.description}"
+            lines.append(line)
+        reply=(
+            "Here are some of my projects:\n" +
+            "\n".join(lines)+
+            "\nYou can ask me more specific questions about any of them!"
+        )
+        return ChatResponse(reply=reply)
+    
+    if "stack" in text or "tech" in text:
+        return ChatResponse(
+            reply="My stack is Python (FastAPI,ML,data), Next.js + Tailwind for frontend and SQLModel + SQLite for storage."
+        )
     if "cv" in text or "resume" in text:
-        reply=(
-            "If you upload your CV in the CV Analyzer"
-            "I can help you analyze it and provide feedback!"
+        return ChatResponse(
+            reply="You can find my CV at https://damianos.dev/cv"
         )
-    elif "project" in text or "projects" in text:
-        reply=(
-            "My portofolio focuses on ML projects"
-            "Plus backend work with Fastpi , Flask and  many more frameworks."
-        )
-    elif "fastapi" in text:
-        reply = "FastAPI is what powers this site's backend and APIs, like /projects and /contact."
-    else:
-        reply=(
-            "I'm here to help you with information about my projects, "
-            "my CV, and how I can assist you with Machine Learning tasks!"
-        )
-    return ChatResponse(reply=reply)
+    return ChatResponse(
+        reply="Tell me what you want to know about my projects, stack or CV."
+    )
 @app.get('/health')
 async def health():
     return {"status":"ok"}
