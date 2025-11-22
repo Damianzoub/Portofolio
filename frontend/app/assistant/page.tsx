@@ -24,7 +24,7 @@ export default function AssistantPage(){
         setLoading(true);
         try{
             const base = process.env.NEXT_PUBLIC_API_BASE!;
-            const res = await fetch(`${base}/api/assistant`,{
+            const res = await fetch(`${base}/assistant`,{
                 method:"POST",
                 headers:{"Content-Type":"application/json"},
                 body:JSON.stringify({messages:newMessages})
