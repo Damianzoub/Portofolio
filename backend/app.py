@@ -19,6 +19,8 @@ load_dotenv()
 GITHUB_USER = os.getenv("GITHUB_USER")
 GITHUB_TOKEN = os.getenv("GITHUB_TOKEN")
 
+SYSTEM_PROMPT = os.getenv("SYSTEM_PROMPT")
+
 #SMTP CONFIGS #TODO: FIX IT LATER
 SMTP_HOST = os.getenv("SMTP_HOST")
 SMTP_PORT = int(os.getenv("SMTP_PORT","587"))
