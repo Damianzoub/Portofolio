@@ -8,3 +8,6 @@ numpy
 requests
 mlflow
 beautifulsoup4
+openai
+typing 
+orjson
