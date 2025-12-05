@@ -2,6 +2,7 @@ from typing import List, Optional
 import os 
 import requests
 from models import Repo 
+from fastapi import HTTPException
 GITHUB_API_BASE = "https://api.github.com"
 
 def fetch_repos_for_user(username:str,token: Optional[str]=None)-> list[Repo]:
@@ -10,9 +11,15 @@ def fetch_repos_for_user(username:str,token: Optional[str]=None)-> list[Repo]:
     if token:
         headers['Authorization'] = f"Bearer {token}"
     
-    resp = requests.get(url,headers=headers,timeout=10)
+    try:
+        resp = requests.get(url,headers=headers)
+    except requests.RequestException as e:
+        print("Github request failed: ",repr(e))
+        raise HTTPException(status_code=502,detail="Failed to contact GitHub API")
     data = resp.json()
-
+    if not isinstance(data,list):
+        print("Unexpected GitHub data: ",data)
+        raise HTTPException(status_code=502,detail="Unexpected response format from GitHub")
     repos: list[Repo]= []
     for item in data:
         category = None

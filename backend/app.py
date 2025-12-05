@@ -104,7 +104,7 @@ async def health():
 
 @app.get("/projects", response_model=List[Repo])
 async def list_projects(session: Session = Depends(get_session)):
-    gh_repos = fetch_repos_for_user(GITHUB_USER)  
+    gh_repos = fetch_repos_for_user(GITHUB_USER,GITHUB_TOKEN)  
 
     # 1) GitHub -> Projects (DB models)
     project_models: list[Projects] = []
