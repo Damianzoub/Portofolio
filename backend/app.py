@@ -38,6 +38,7 @@ app.add_exception_handler(403,http_403_handler)
 
 origins = [
     "http://localhost:3000",
+    "https://damianoszoumposportofolio.vercel.app/"
 ]
 
 app.add_middleware(
