@@ -11,7 +11,6 @@ def fetch_repos_for_user(username:str,token: Optional[str]=None)-> list[Repo]:
         headers['Authorization'] = f"Bearer {token}"
     
     resp = requests.get(url,headers=headers,timeout=10)
-    resp.raise_for_status()
     data = resp.json()
 
     repos: list[Repo]= []
