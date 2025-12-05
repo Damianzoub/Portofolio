@@ -23,7 +23,7 @@ export default function HomePage(){
             </div>
             {/*Right Item*/}
             <div className="md:w-1/2">
-              <img src="frontend/public/images/damianosZoumposImg.jpeg" alt="Damianos Zoumpos Picture" />
+              <img src="/images/damianosZoumposImg.jpeg" alt="Damianos Zoumpos Picture" />
             </div>
         </div>
     </section>
