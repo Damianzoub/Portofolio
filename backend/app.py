@@ -106,7 +106,7 @@ async def health():
 async def list_projects(session: Session = Depends(get_session)):
     gh_repos = fetch_repos_for_user(GITHUB_USER,GITHUB_TOKEN)  
 
-    # 1) GitHub -> Projects (DB models)
+    # 1) GitHub -> Projects 
     project_models: list[Projects] = []
     for r in gh_repos:
         project_models.append(
