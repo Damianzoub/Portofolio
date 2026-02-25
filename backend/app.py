@@ -39,7 +39,7 @@ app.add_exception_handler(500,http_500_handler)
 app.add_exception_handler(403,http_403_handler)
 
 origins = [
-    "https://damianoszoumposportofolio.vercel.app/"
+    "https://damianoszoumposportofolio.vercel.app"
 ] #ask if i can put a list of origins in my .env
 
 app.add_middleware(
