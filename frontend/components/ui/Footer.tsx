@@ -25,7 +25,7 @@ export default function Footer(){
                             Connect
                         </h4>
                         <div className="flex gap-4 text-slate-500">
-                            <a href="https://github.com/Damianxoub" target="_blank" className="hover:text-slate-900">
+                            <a href="https://github.com/Damianzoub" target="_blank" className="hover:text-slate-900">
                                 <Github size={20}/>
                             </a>
                             <a href="https://www.linkedin.com/in/damianos-zoumpos-980476269/" target="_blank" className="hover:text-slate-900">

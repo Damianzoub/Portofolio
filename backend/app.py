@@ -1,31 +1,33 @@
+import math
 from datetime import datetime
-from typing import List 
-from fastapi import FastAPI
+from typing import List ,Optional,Literal
+from fastapi import FastAPI , HTTPException,Query
 from fastapi.middleware.cors import CORSMiddleware
 from errors.handlers import http_403_handler,http_500_handler,http_404_handler
-from models import Repo , Newsletter , ContactIn , ContactOut, ChatResponse,ChatRequest
+from models import Repo , Newsletter , ContactIn , ContactOut, ChatResponse,ChatRequest, ProjectsPage
 from dotenv import load_dotenv
 import os
-from services.project_services import sync_projects
+from services.project_services import upsert_projects, projects_to_repo
+from services.github_services import fetch_all_repos, fetch_repo_topics, infer_category, build_repo_model
 from fastapi import Depends
-from sqlmodel import Session, select
+from sqlmodel import Session, select,func
 from db import init_db,get_session
 from db_models import Projects,Contacts,NewsletterSubscribers
 from utils.email_utils import send_contact_email, check_email,send_user_confirmation_email,send_subcription_confirmation_email
-from client.github_client import fetch_repos_for_user
 from pathlib import Path
 
 load_dotenv()
 GITHUB_USER = os.getenv("GITHUB_USER")
 GITHUB_TOKEN = os.getenv("GITHUB_TOKEN")
 
-SYSTEM_PROMPT = os.getenv("SYSTEM_PROMPT")
 
 #SMTP CONFIGS #TODO: FIX IT LATER
 SMTP_HOST = os.getenv("SMTP_HOST")
 SMTP_PORT = int(os.getenv("SMTP_PORT","587"))
 SMTP_USER = os.getenv("SMTP_USER")
 SMTP_PASSWORD = os.getenv("SMTP_PASSWORD")
+Category = Literal["All", "ML", "Math", "Automation", "Website"]
+SortKey = Literal["stars", "name"]
 CONTACT_LOG = Path("contact_messages.jsonl")
 app = FastAPI(
     title="Damian Portofolio API",
@@ -37,9 +39,8 @@ app.add_exception_handler(500,http_500_handler)
 app.add_exception_handler(403,http_403_handler)
 
 origins = [
-    "http://localhost:3000",
     "https://damianoszoumposportofolio.vercel.app/"
-]
+] #ask if i can put a list of origins in my .env
 
 app.add_middleware(
     CORSMiddleware,
@@ -102,43 +103,66 @@ async def chat_endpoint(payload:ChatRequest , session:Session = Depends(get_sess
 async def health():
     return {"status":"ok"}
 
-@app.get("/projects", response_model=List[Repo])
-async def list_projects(session: Session = Depends(get_session)):
-    gh_repos = fetch_repos_for_user(GITHUB_USER,GITHUB_TOKEN)  
+@app.post("/projects/sync")
+def sync_projects_from_github(session: Session = Depends(get_session)):
+    raw = fetch_all_repos(GITHUB_USER, GITHUB_TOKEN)
 
-    # 1) GitHub -> Projects 
-    project_models: list[Projects] = []
-    for r in gh_repos:
-        project_models.append(
-            Projects(
-                github_id=r.id,                             # GitHub ID
-                name=r.name,
-                description=getattr(r, "description", None),
-                html_url=r.html_url,                        
-                language=getattr(r, "language", None),
-                stargazers_count=getattr(r, "stargazers_count", 0),
-                
-            )
-        )
+    repos: list[Repo] = []
+    for item in raw:
+        name = item.get("name") or ""
+        if name == GITHUB_USER:
+            continue
 
-    stored_projects = sync_projects(session, project_models)
+        topics = fetch_repo_topics(GITHUB_USER, name, GITHUB_TOKEN)
+        category = infer_category(name=name, language=item.get("language"), topics=topics)
+        repos.append(build_repo_model(item, category))
 
-    # 2) Projects (DB) -> Repo (response schema)
-    repos_response: list[Repo] = []
-    for p in stored_projects:
-        repos_response.append(
-            Repo(
-                id=p.github_id,                
-                name=p.name,
-                description=p.description,
-                html_url=p.html_url,
-                language=p.language,
-                stargazers_count=p.stargazers_count,
-                category=p.category if p.category in {"ML", "Math", "Automation", "Website"} else None,
-            )
-        )
+    stored = upsert_projects(session, repos)
+    return {"synced": len(stored)}
 
-    return repos_response
+@app.get("/projects", response_model=ProjectsPage)
+def list_projects(
+    session: Session = Depends(get_session),
+    page: int = Query(1, ge=1),
+    per_page: int = Query(12, ge=1, le=50),
+    category: Category = Query("All"),
+    search: Optional[str] = Query(None),
+    sort: SortKey = Query("stars"),
+):
+    q = select(Projects)
+
+    if category != "All":
+        q = q.where(Projects.category == category)
+
+    if search:
+        s = f"%{search.lower()}%"
+        q = q.where(func.lower(Projects.name).like(s) | func.lower(func.coalesce(Projects.description, "")).like(s))
+
+    # sorting
+    if sort == "stars":
+        q = q.order_by(Projects.stargazers_count.desc(), Projects.name.asc())
+    else:
+        q = q.order_by(Projects.name.asc())
+
+    # total count
+    count_q = select(func.count()).select_from(q.subquery())
+    total = session.exec(count_q).one()
+    pages = max(1, math.ceil(total / per_page))
+
+    # pagination
+    offset = (page - 1) * per_page
+    items_db = session.exec(q.offset(offset).limit(per_page)).all()
+    items = [projects_to_repo(p) for p in items_db]
+
+    return ProjectsPage(
+        items=items,
+        page=page,
+        per_page=per_page,
+        total=total,
+        pages=pages,
+        has_next=page < pages,
+        has_prev=page > 1,
+    )
 
 @app.post('/contact',response_model=ContactOut)
 async def submit_contact(contact:ContactIn, session: Session = Depends(get_session)):
@@ -149,8 +173,6 @@ async def submit_contact(contact:ContactIn, session: Session = Depends(get_sessi
         return {"ok":False,"message":"Message cannot be empty."}
     if len(contact.name.strip())==0:
         return {"ok":False,"message":"Name cannot be empty."}
-    if contact.email == FORBIDDEN_EMAIL:
-        return {"ok":False,"message":"Forbidden email address."}
     try:
         send_contact_email(
             smtp_host=SMTP_HOST,
@@ -194,13 +216,14 @@ async def submit_contact(contact:ContactIn, session: Session = Depends(get_sessi
 
 @app.post('/newsletter')
 async def subscribe_newsletter(body:Newsletter,session: Session = Depends(get_session)):
-    
+    print('ok')
     if check_email(body.email):
+        print("ok")
         existing = session.exec(
             select(NewsletterSubscribers).where(NewsletterSubscribers.email==body.email)
-        )
+        ).first()
         if existing:
-            raise Exception("Email already subscribed.")
+            raise HTTPException(status_code=400,detail="Email already subscribed.")
         sub = NewsletterSubscribers(
             email = body.email
         )

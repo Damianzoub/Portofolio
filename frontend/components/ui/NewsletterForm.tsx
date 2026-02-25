@@ -29,7 +29,7 @@ export default function NewsletterForm(){
             })
             if(!res.ok){
                 const data = await res.json().catch(()=> null);
-                throw new Error(data?.message || "Failed to subscribe");
+                throw new Error(data?.message || data?.detail || "Failed to subscribe");
             }
             setState("success")
             setEmail("");

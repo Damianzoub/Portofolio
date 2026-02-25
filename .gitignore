@@ -5,7 +5,8 @@ __pycache__/
 
 # C extensions
 *.so
-
+rag_content
+rag_store_chroma
 .env 
 /backend/portfolio.db
 # Distribution / packaging

@@ -22,7 +22,7 @@ export default function ProjectFilter({
 }){
 
     return (
-        <div className="mb-6 flex flex-col gap-3 md:flex-row md:-items-center md:justify-between">
+        <div className="mb-6 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
             <div className="flex gap-2 flex-wrap">
                 {categories.map((c)=>(
                     <button key={c} onClick={()=>onSelectCategory(c)} className={`px-3 py-1.5 rounded-lg text-sm transition ${selectedCategory === c ? "bg-slate-900 text-white" : "bg-slate-100 text-slate-700 hover:bg-slate-200"}`}>{c}</button>

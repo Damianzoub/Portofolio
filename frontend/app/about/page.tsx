@@ -1,3 +1,4 @@
+import { Bold } from "lucide-react";
 import Link from "next/link";
 
 
@@ -116,7 +117,7 @@ export default function AboutPage(){
                         <div className="bg-white rounded-2xl p-5 ring-1 ring-slate-200">
                             <div className="flex items-center justify-between">
                                 <h3 className="font-medium text lg">IEEE Student Branch</h3>
-                                <span className="text-sm text-slate 500">July 2025 - Present</span>
+                                <span className="text-sm text-slate-500">July 2025 - Present</span>
                             </div>
                             <p className="mt-2 text-slate-700">
                                 Active member of AI SG of the IEEE UniWA student organization, we organize events and projects related with AI
@@ -134,7 +135,11 @@ export default function AboutPage(){
                             </p>
                             <div className="font-medium mt-4">Data Analysis & ML</div>
                             <p className="text-slate-700 mt-1">
-                                Pandas,NumPy,Scikit-learn,OpenCV,PyTorch(basic),Tensorflow 
+                                Pandas,NumPy,Scikit-learn,OpenCV
+                            </p>
+                            <div className="font-medium mt-4">AI &amp; Deep Learning</div>
+                            <p className="text-slate-700 mt-1">
+                                PyTorch,Tensorflow,LangChain(basics)
                             </p>
                             <div className="font-medium mt-4">
                                 Visualization
