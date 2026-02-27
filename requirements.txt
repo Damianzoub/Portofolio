@@ -2,14 +2,12 @@ fastapi
 uvicorn
 pydantic
 sqlmodel
-
 numpy
 requests
 beautifulsoup4
 orjson
-
 httpx
 chromadb
-
+resend
 openai
 python-dotenv

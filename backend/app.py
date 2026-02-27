@@ -1,7 +1,7 @@
 import math
 from datetime import datetime
 from typing import List ,Optional,Literal
-from fastapi import FastAPI , HTTPException,Query
+from fastapi import FastAPI , HTTPException,Query, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
 from errors.handlers import http_403_handler,http_500_handler,http_404_handler
 from models import Repo , Newsletter , ContactIn , ContactOut, ChatResponse,ChatRequest, ProjectsPage
@@ -13,7 +13,7 @@ from fastapi import Depends
 from sqlmodel import Session, select,func
 from db import init_db,get_session
 from db_models import Projects,Contacts,NewsletterSubscribers
-from utils.email_utils import send_contact_email, check_email,send_user_confirmation_email,send_subcription_confirmation_email
+from utils.email_utils import *
 from pathlib import Path
 
 load_dotenv()
@@ -22,10 +22,8 @@ GITHUB_TOKEN = os.getenv("GITHUB_TOKEN")
 
 
 #SMTP CONFIGS #TODO: FIX IT LATER
-SMTP_HOST = os.getenv("SMTP_HOST")
-SMTP_PORT = int(os.getenv("SMTP_PORT","587"))
-SMTP_USER = os.getenv("SMTP_USER")
-SMTP_PASSWORD = os.getenv("SMTP_PASSWORD")
+EMAIL_FROM = os.getenv("EMAIL_FROM")
+EMAIL_TO = os.getenv("EMAIL_TO")
 Category = Literal["All", "ML", "Math", "Automation", "Website"]
 SortKey = Literal["stars", "name"]
 CONTACT_LOG = Path("contact_messages.jsonl")
@@ -165,7 +163,7 @@ def list_projects(
     )
 
 @app.post('/contact',response_model=ContactOut)
-async def submit_contact(contact:ContactIn, session: Session = Depends(get_session)):
+async def submit_contact(contact:ContactIn,background_tasks:BackgroundTasks, session: Session = Depends(get_session)):
     
     if not check_email(contact.email):
         return {"ok":False,"message":"Invalid email address."}
@@ -173,32 +171,6 @@ async def submit_contact(contact:ContactIn, session: Session = Depends(get_sessi
         return {"ok":False,"message":"Message cannot be empty."}
     if len(contact.name.strip())==0:
         return {"ok":False,"message":"Name cannot be empty."}
-    try:
-        send_contact_email(
-            smtp_host=SMTP_HOST,
-            smtp_port=SMTP_PORT,
-            smtp_user = SMTP_USER,
-            smtp_pass = SMTP_PASSWORD,
-            sender = SMTP_USER,
-            recipient = SMTP_USER,
-            name = contact.name,
-            email = contact.email,
-            message = contact.message
-        )
-    except Exception as e:
-        return {"ok":False,"message":"Failed to send message."}
-    try:
-        send_user_confirmation_email(
-            smtp_host=SMTP_HOST,
-            smtp_port=SMTP_PORT,
-            smtp_user = SMTP_USER,
-            smtp_pass = SMTP_PASSWORD,
-            sender = SMTP_USER,
-            user_email = contact.email,
-            user_name = contact.name
-        )
-    except Exception as e:
-        return {"ok":False,"message":"Failed to log message."}
     msg = Contacts(
         name = contact.name,
         email = contact.email,
@@ -207,6 +179,8 @@ async def submit_contact(contact:ContactIn, session: Session = Depends(get_sessi
     session.add(msg)
     session.commit()
     session.refresh(msg)
+    background_tasks.add_task(send_contact_email,contact.name,contact.email,contact.message)
+    background_tasks.add_task(send_user_confirmation_email,contact.email,contact.name)
     return ContactOut(
         ok=True,
         message="Thanks for reaching out! I'll get back to you soon.",
@@ -215,7 +189,7 @@ async def submit_contact(contact:ContactIn, session: Session = Depends(get_sessi
 
 
 @app.post('/newsletter')
-async def subscribe_newsletter(body:Newsletter,session: Session = Depends(get_session)):
+async def subscribe_newsletter(body:Newsletter,background_tasks:BackgroundTasks,session: Session = Depends(get_session)):
     print('ok')
     if check_email(body.email):
         print("ok")
@@ -230,18 +204,7 @@ async def subscribe_newsletter(body:Newsletter,session: Session = Depends(get_se
         session.add(sub)
         session.commit()
         session.refresh(sub)
-        try:
-            send_subcription_confirmation_email(
-                smtp_host=SMTP_HOST,
-                smtp_port=SMTP_PORT,
-                smtp_user = SMTP_USER,
-                smtp_pass = SMTP_PASSWORD,
-                sender = SMTP_USER,
-                user_email = body.email,
-                user_name = body.email.split("@")[0]
-            )
-        except Exception as e:
-            return {"ok":False,"message":"Failed to send confirmation email."}
+        background_tasks.add_task(send_email,body.email,"Subscribed!", "<p>Thanks!</p>")
         return {"ok":True,"message":"Subscribed to newsletter!"}
     else:
         return {"ok":False,"message":"Invalid email address."}

@@ -1,95 +1,43 @@
 import re
-import smtplib 
-from email.message import EmailMessage
+import os
+import resend
+from dotenv import load_dotenv
+load_dotenv()
+RESEND_API_KEY = os.getenv("RESEND_API_KEY")
+EMAIL_FROM = os.getenv("EMAIL_FROM")
+EMAIL_TO = os.getenv("EMAIL_TO")
+def send_email(to:str,subject:str,html:str):
+    return resend.Emails.send({
+        "from":os.getenv("EMAIL_FROM"),
+        "to":[to],
+        "subject":subject,
+        "html":html
+    })
+
+def send_contact_email(name:str,email:str,message:str):
+    return resend.Emails.send({
+        "from":EMAIL_FROM,
+        "to":[EMAIL_TO],
+        "reply_to":email,
+        "subject":f"New message from {name}",
+        "html":f"""
+            <p><b>Name:</b> {name}</p>
+            <p><b>Email:</b> {email}</p>
+            <p><b>Message:</b> {message}</p>
+        """
+    })
+
+def send_user_confirmation_email(user_email:str,user_name:str):
+    resend.Emails.send({
+        "from":EMAIL_FROM,
+        "to":[user_email],
+        "subject": "Got your message (Automated Message)",
+        "html": f"<p>Hi {user_name}, thanks for reaching out - I'll contact you soon</p>"
+    })
+
+
 def check_email(email) -> bool:
     """Check if the provided email address is valid."""
     email_regex = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
     return re.match(email_regex, email) is not None
 
-def send_contact_email(
-        smtp_host:str, 
-        smtp_port:int,
-        smtp_user:str,
-        smtp_pass:str, 
-        sender:str,
-        recipient:str,
-        name:str,
-        email:str,
-        message:str
-)-> None:
-    #email structure
-    msg = EmailMessage()
-    msg['Subject'] = f"New contact form submission from {name}"
-    msg['From'] = sender 
-    msg['To'] = recipient
-    msg['Reply-To'] = email 
-    body=f"""
-    You have received a new message from your website contact form.
-
-    Here are the details:
-
-    Name: {name}
-    Email: {email}
-    Message: 
-    {message}
-"""
-    msg.set_content(body)
-    with smtplib.SMTP(smtp_host,smtp_port) as server:
-        server.starttls()
-        server.login(smtp_user,smtp_pass)
-        server.send_message(msg)
-
-def send_subcription_confirmation_email(
-        smtp_host:str,
-        smtp_port:int,
-        smtp_user:str,
-        smtp_pass:str,
-        sender:str,
-        user_email:str,
-        user_name:str 
-)-> None:
-    msg = EmailMessage()
-    msg['Subject'] = "Subscription Confirmation"
-    msg['From'] = sender
-    msg['To']= user_email
-    body=f"""
-    Hi {user_name},
-    Thank you for subscribing to our newsletter! We're excited to have you on board.    
-    Best regards,
-    Damianos Zoumpos
-    -----
-    """
-
-    msg.set_content(body)
-    with smtplib.SMTP(smtp_host,smtp_port) as serveer:
-        serveer.starttls()
-        serveer.login(smtp_user,smtp_pass)
-        serveer.send_message(msg)
-
-def send_user_confirmation_email(
-        smtp_host:str,
-        smtp_port:int,
-        smtp_user:str,
-        smtp_pass:str,
-        sender:str,
-        user_email:str,
-        user_name:str
-)-> None: 
-    msg = EmailMessage()
-    msg['Subject'] = "Thank you for contacting us!"
-    msg['From'] = sender
-    msg['To'] = user_email
-    body=f"""
-    Hi {user_name},
-    Thank you for reaching out! I have received your message and will get back to you shortly.
-
-    Best regards,
-    Damianos Zoumpos
-    -----
-    This is an automated confirmation email.
-"""
-    msg.set_content(body)
-    with smtplib.SMTP(smtp_host,smtp_port) as serveer:
-        serveer.starttls()
-        serveer.login(smtp_user,smtp_pass)
-        serveer.send_message(msg)
