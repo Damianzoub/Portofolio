@@ -14,11 +14,11 @@ export default function HomePage(){
           </p>
 
           <div className="flex space-x-4">
-            <Link href="#projects" className="px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition">
+            <Link href="projects" className="px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition">
               View Projects
             </Link>
 
-            <Link href="#contact" className="px-6 py-3 border border-indigo-600 text-indigo-600 rounded-lg hover:bg-indigo-100 transition">
+            <Link href="contact" className="px-6 py-3 border border-indigo-600 text-indigo-600 rounded-lg hover:bg-indigo-100 transition">
               Contact Me
             </Link>
           </div>
