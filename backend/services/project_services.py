@@ -56,3 +56,14 @@ def upsert_projects_fast(session: Session, repos: Iterable[Repo]) -> List[Projec
 
     session.commit()
     return stored
+
+def projects_to_repo(p:Projects) -> Repo: 
+    return Repo(
+        id = p.github_id,
+        name=p.name or "",
+        description=p.description,
+        html_url = p.html_url or '',
+        language = p.language,
+        stargazers_count=int(p.stargazers_count or 0),
+        category= p.category
+    )

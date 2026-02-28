@@ -7,7 +7,7 @@ from errors.handlers import http_403_handler,http_500_handler,http_404_handler
 from models import Repo , Newsletter , ContactIn , ContactOut, ChatResponse,ChatRequest, ProjectsPage
 from dotenv import load_dotenv
 import os
-from services.project_services import upsert_projects_fast
+from services.project_services import upsert_projects_fast , projects_to_repo
 from services.github_services import fetch_all_repos, fetch_repo_topics_many, infer_category, build_repo_model
 from fastapi import Depends
 from sqlmodel import Session, select,func
@@ -31,7 +31,6 @@ app = FastAPI(
     title="Damian Portofolio API",
     description="Backend API For Damianos Portofolio "
 )
-FORBIDDEN_EMAIL = os.getenv("FORBIDDEN_EMAIL")
 app.add_exception_handler(404,http_404_handler)
 app.add_exception_handler(500,http_500_handler)
 app.add_exception_handler(403,http_403_handler)
