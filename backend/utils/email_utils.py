@@ -2,8 +2,10 @@ import re
 import os
 import resend
 from dotenv import load_dotenv
+import httpx
 load_dotenv()
 RESEND_API_KEY = os.getenv("RESEND_API_KEY")
+resend.api_key = RESEND_API_KEY
 EMAIL_FROM = os.getenv("EMAIL_FROM")
 EMAIL_TO = os.getenv("EMAIL_TO")
 def send_email(to:str,subject:str,html:str):
@@ -26,6 +28,19 @@ def send_contact_email(name:str,email:str,message:str):
             <p><b>Message:</b> {message}</p>
         """
     })
+
+def send_subscription_confirmation_email(user_email:str,user_name:str):
+    payload = {
+        "from":EMAIL_FROM,
+        "to":[user_email],
+        "subject": "Subscribed!",
+        "html":f"<p>Thanks {user_name}, you're subscribed. </p>"
+    }
+    headers = {"Authorization":f"Bearer {RESEND_API_KEY}"}
+    with httpx.Client(timeout=15.0) as client:
+        r = client.post("https://api.resend.com/emails", json=payload, headers=headers)
+        r.raise_for_status()
+
 
 def send_user_confirmation_email(user_email:str,user_name:str):
     resend.Emails.send({

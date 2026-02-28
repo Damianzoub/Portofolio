@@ -7,8 +7,8 @@ from errors.handlers import http_403_handler,http_500_handler,http_404_handler
 from models import Repo , Newsletter , ContactIn , ContactOut, ChatResponse,ChatRequest, ProjectsPage
 from dotenv import load_dotenv
 import os
-from services.project_services import upsert_projects, projects_to_repo
-from services.github_services import fetch_all_repos, fetch_repo_topics, infer_category, build_repo_model
+from services.project_services import upsert_projects_fast
+from services.github_services import fetch_all_repos, fetch_repo_topics_many, infer_category, build_repo_model
 from fastapi import Depends
 from sqlmodel import Session, select,func
 from db import init_db,get_session
@@ -102,21 +102,39 @@ async def health():
     return {"status":"ok"}
 
 @app.post("/projects/sync")
-def sync_projects_from_github(session: Session = Depends(get_session)):
-    raw = fetch_all_repos(GITHUB_USER, GITHUB_TOKEN)
-
+def sync_projects_from_github(session:Session=Depends(get_session)):
+    raw = fetch_all_repos(GITHUB_USER,GITHUB_TOKEN)
     repos: list[Repo] = []
+    needs_topics_names:list[str]=[]
+    needs_topics_meta:list[tuple[int,str,dict]] =[]
+
     for item in raw:
-        name = item.get("name") or ""
-        if name == GITHUB_USER:
+        name= item.get("name") or ""
+        if not name or name == GITHUB_USER:
             continue
 
-        topics = fetch_repo_topics(GITHUB_USER, name, GITHUB_TOKEN)
-        category = infer_category(name=name, language=item.get("language"), topics=topics)
-        repos.append(build_repo_model(item, category))
+        lang = item.get("language")
+        category = infer_category(name=name,language=lang,topics=[])
+        repo_model = build_repo_model(item,category)
+        repos.append(repo_model)
 
-    stored = upsert_projects(session, repos)
-    return {"synced": len(stored)}
+        if category is None:
+            needs_topics_names.append(name)
+            needs_topics_meta.append((len(repos)-1,name,item))
+    
+    if needs_topics_names:
+        topics_map = fetch_repo_topics_many(
+            owner = GITHUB_USER,
+            repo_names = needs_topics_names,
+            token=GITHUB_TOKEN,
+            max_workers=6
+        )
+        for idx,name,item in needs_topics_meta:
+            topics = topics_map.get(name,[])
+            lang = item.get('language')
+            repos[idx].category = infer_category(name=name,language=lang,topics=topics)
+    stored = upsert_projects_fast(session,repos)
+    return {"synced":len(stored),"topics_fetched":len(needs_topics_names)}
 
 @app.get("/projects", response_model=ProjectsPage)
 def list_projects(
@@ -204,7 +222,8 @@ async def subscribe_newsletter(body:Newsletter,background_tasks:BackgroundTasks,
         session.add(sub)
         session.commit()
         session.refresh(sub)
-        background_tasks.add_task(send_email,body.email,"Subscribed!", "<p>Thanks!</p>")
+        user_name = body.email.split('@')[0]
+        background_tasks.add_task(send_subscription_confirmation_email,body.email,user_name)
         return {"ok":True,"message":"Subscribed to newsletter!"}
     else:
         return {"ok":False,"message":"Invalid email address."}
