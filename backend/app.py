@@ -19,7 +19,7 @@ from pathlib import Path
 load_dotenv()
 GITHUB_USER = os.getenv("GITHUB_USER")
 GITHUB_TOKEN = os.getenv("GITHUB_TOKEN")
-
+DEPLOYED_FRONTEND = os.getenv("DEPLOYED_FRONTEND")
 
 #SMTP CONFIGS #TODO: FIX IT LATER
 EMAIL_FROM = os.getenv("EMAIL_FROM")
@@ -37,7 +37,7 @@ app.add_exception_handler(500,http_500_handler)
 app.add_exception_handler(403,http_403_handler)
 
 origins = [
-    "https://damianoszoumposportofolio.vercel.app"
+    DEPLOYED_FRONTEND
 ] #ask if i can put a list of origins in my .env
 
 app.add_middleware(
